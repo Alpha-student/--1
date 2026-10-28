@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кривая производственных возможностей</title>
+
+    <style>
+        :root {
+            --bg: #f4f7fb;
+            --card: #ffffff;
+            --text: #172033;
+            --muted: #667085;
+            --blue: #2563eb;
+            --green: #16a34a;
+            --orange: #f59e0b;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 24px;
+            font-family: Arial, Helvetica, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            font-size: clamp(24px, 4vw, 34px);
+            margin: 0 0 10px;
+        }
+
+        header p {
+            color: var(--muted);
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1.7fr) minmax(270px, 1fr);
+            gap: 20px;
+            align-items: start;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 5px 20px rgba(15, 23, 42, 0.04);
+        }
+
+        .card h2 {
+            font-size: 19px;
+            margin: 0 0 18px;
+        }
+
+        .chart-wrapper {
+            width: 100%;
+            position: relative;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            touch-action: none;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-top: 14px;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .dot {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .line {
+            width: 22px;
+            height: 3px;
+            border-radius: 3px;
+            display: inline-block;
+        }
+
+        .control {
+            margin-bottom: 25px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .control label {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .value {
+            font-weight: 700;
+            color: var(--blue);
+            white-space: nowrap;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--blue);
+            cursor: pointer;
+        }
+
+        .range-labels {
+            display: flex;
+            justify-content: space-between;
+            color: var(--muted);
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .divider {
+            border: 0;
+            border-top: 1px solid var(--border);
+            margin: 22px 0;
+        }
+
+        .point-control {
+            margin-bottom: 18px;
+        }
+
+        .point-control label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .status {
+            border-radius: 12px;
+            padding: 14px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            margin-top: 18px;
+        }
+
+        .status h3 {
+            margin: 0 0 7px;
+            font-size: 15px;
+        }
+
+        .status p {
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #475569;
+        }.status.efficient {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+        }
+
+        .status.inefficient {
+            background: #fffbeb;
+            border-color: #fde68a;
+        }
+
+        .status.unattainable {
+            background: #fef2f2;
+            border-color: #fecaca;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .stat {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            padding: 12px;
+            border-radius: 10px;
+        }
+
+        .stat small {
+            display: block;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .stat strong {
+            font-size: 18px;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 18px;
+        }
+
+        button {
+            border: 0;
+            border-radius: 9px;
+            padding: 10px 13px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            background: #e8efff;
+            color: #1d4ed8;
+        }
+
+        button:hover {
+            filter: brightness(0.96);
+        }
+
+        button.primary {
+            background: var(--blue);
+            color: white;
+        }
+
+        .explanation {
+            margin-top: 20px;
+            line-height: 1.7;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .explanation strong {
+            color: var(--text);
+        }
+
+        @media (max-width: 780px) {
+            body {
+                padding: 14px;
+            }
+
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <header>
+        <h1>Кривая производственных возможностей</h1>
+        <p>
+            Изучай, как ограниченность ресурсов заставляет экономику
+            выбирать между производством пшеницы и компьютеров.
+            Меняй ползунки и наблюдай за изменениями на графике.
+        </p>
+    </header>
+
+    <div class="layout">
+
+        <section class="card">
+            <h2>График производственных возможностей</h2>
+
+            <div class="chart-wrapper">
+                <canvas id="chart" aria-label="Интерактивный график КПВ">
+                    Ваш браузер не поддерживает Canvas.
+                </canvas>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <span class="line" style="background:#2563eb"></span>
+                    <span>Кривая КПВ</span>
+                </div>
+
+                <div class="legend-item">
+                    <span class="dot" style="background:#16a34a"></span>
+                    <span>Эффективная точка</span>
+                </div>
+
+                <div class="legend-item">
+                    <span class="dot" style="background:#f59e0b"></span>
+                    <span>Неэффективная точка</span>
+                </div>
+
+                <div class="legend-item">
+                    <span class="dot" style="background:#dc2626"></span>
+                    <span>Недостижимая точка</span>
+                </div>
+            </div>
+
+            <div class="explanation">
+                <strong>Как пользоваться:</strong>
+                перетаскивай оранжевую точку непосредственно на графике
+                или меняй значения производства с помощью ползунков.
+                Цвет точки покажет, насколько эффективно используются ресурсы.
+            </div>
+        </section>
+
+        <aside class="card">
+            <h2>1. Производственные возможности</h2>
+
+            <div class="control">
+                <div class="control-header">
+                    <label for="maxWheat">Максимум пшеницы</label>
+                    <span class="value" id="maxWheatValue">100 т</span>
+                </div><input
+                    type="range"
+                    id="maxWheat"
+                    min="20"
+                    max="200"
+                    step="10"
+                    value="100"
+                >
+
+                <div class="range-labels">
+                    <span>20 т</span>
+                    <span>200 т</span>
+                </div>
+            </div>
+
+            <div class="control">
+                <div class="control-header">
+                    <label for="maxComputers">Максимум компьютеров</label>
+                    <span class="value" id="maxComputersValue">50 шт.</span>
+                </div>
+
+                <input
+                    type="range"
+                    id="maxComputers"
+                    min="10"
+                    max="100"
+                    step="5"
+                    value="50"
+                >
+
+                <div class="range-labels">
+                    <span>10 шт.</span>
+                    <span>100 шт.</span>
+                </div>
+            </div>
+
+            <hr class="divider">
+
+            <h2>2. Выбранный объём производства</h2>
+
+            <div class="point-control">
+                <label for="wheat">Производство пшеницы</label>
+
+                <div class="control-header">
+                    <span>Пшеница</span>
+                    <span class="value" id="wheatValue">50 т</span>
+                </div>
+
+                <input
+                    type="range"
+                    id="wheat"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value="50"
+                >
+            </div>
+
+            <div class="point-control">
+                <label for="computers">Производство компьютеров</label>
+
+                <div class="control-header">
+                    <span>Компьютеры</span>
+                    <span class="value" id="computersValue">25 шт.</span>
+                </div>
+
+                <input
+                    type="range"
+                    id="computers"
+                    min="0"
+                    max="50"
+                    step="1"
+                    value="25"
+                >
+            </div>
+
+            <div id="status" class="status efficient">
+                <h3 id="statusTitle">Производственная эффективность</h3>
+                <p id="statusText">
+                    Точка находится на кривой производственных возможностей.
+                </p>
+            </div>
+
+            <div class="stats">
+                <div class="stat">
+                    <small>Пшеница</small>
+                    <strong id="statWheat">50 т</strong>
+                </div>
+
+                <div class="stat">
+                    <small>Компьютеры</small>
+                    <strong id="statComputers">25 шт.</strong>
+                </div>
+            </div>
+
+            <div class="buttons">
+                <button class="primary" id="resetButton">
+                    Сбросить
+                </button>
+
+                <button id="efficientButton">
+                    На кривую
+                </button>
+
+                <button id="insideButton">
+                    Внутрь кривой
+                </button>
+            </div>
+        </aside>
+
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById("chart");
+    const ctx = canvas.getContext("2d");
+
+    const maxWheatInput = document.getElementById("maxWheat");
+    const maxComputersInput = document.getElementById("maxComputers");
+    const wheatInput = document.getElementById("wheat");
+    const computersInput = document.getElementById("computers");
+
+    const maxWheatValue = document.getElementById("maxWheatValue");
+    const maxComputersValue = document.getElementById("maxComputersValue");
+    const wheatValue = document.getElementById("wheatValue");
+    const computersValue = document.getElementById("computersValue");const statusBox = document.getElementById("status");
+    const statusTitle = document.getElementById("statusTitle");
+    const statusText = document.getElementById("statusText");
+
+    const statWheat = document.getElementById("statWheat");
+    const statComputers = document.getElementById("statComputers");
+
+    let dragging = false;
+
+    const margin = {
+        left: 65,
+        right: 25,
+        top: 25,
+        bottom: 60
+    };
+
+    let width = 600;
+    let height = 440;
+    let scaleX = 1;
+    let scaleY = 1;
+
+    function getMaxWheat() {
+        return Number(maxWheatInput.value);
+    }
+
+    function getMaxComputers() {
+        return Number(maxComputersInput.value);
+    }
+
+    function getWheat() {
+        return Number(wheatInput.value);
+    }
+
+    function getComputers() {
+        return Number(computersInput.value);
+    }
+
+    function getPlot() {
+        return {
+            left: margin.left,
+            right: width - margin.right,
+            top: margin.top,
+            bottom: height - margin.bottom
+        };
+    }
+
+    function toCanvasX(wheat) {
+        const plot = getPlot();
+
+        return plot.left +
+            (wheat / getMaxWheat()) * (plot.right - plot.left);
+    }
+
+    function toCanvasY(computers) {
+        const plot = getPlot();
+
+        return plot.bottom -
+            (computers / getMaxComputers()) * (plot.bottom - plot.top);
+    }
+
+    function toDataX(x) {
+        const plot = getPlot();
+
+        return Math.max(0, Math.min(
+            getMaxWheat(),
+            ((x - plot.left) / (plot.right - plot.left)) * getMaxWheat()
+        ));
+    }
+
+    function toDataY(y) {
+        const plot = getPlot();
+
+        return Math.max(0, Math.min(
+            getMaxComputers(),
+            ((plot.bottom - y) / (plot.bottom - plot.top)) * getMaxComputers()
+        ));
+    }
+
+    // Квадратичная КПВ:
+    // C = Cmax * (1 - (W / Wmax)^2)
+    function frontier(wheat) {
+        const ratio = wheat / getMaxWheat();
+
+        return getMaxComputers() * (1 - ratio * ratio);
+    }
+
+    function resizeCanvas() {
+        const rect = canvas.getBoundingClientRect();
+
+        width = Math.max(320, rect.width);
+        height = width * 0.72;
+
+        const dpr = window.devicePixelRatio || 1;
+
+        canvas.width = Math.round(width * dpr);
+        canvas.height = Math.round(height * dpr);
+
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        scaleX = width / 600;
+        scaleY = height / 440;
+
+        draw();
+    }
+
+    function drawGrid(plot) {
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = "#e8edf5";
+        ctx.fillStyle = "#64748b";
+        ctx.font = "12px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        const divisions = 5;
+
+        for (let i = 0; i <= divisions; i++) {
+            const x = plot.left +
+                (plot.right - plot.left) * i / divisions;
+
+            const y = plot.bottom -
+                (plot.bottom - plot.top) * i / divisions;
+
+            // Вертикальная сетка
+            ctx.beginPath();
+            ctx.moveTo(x, plot.top);
+            ctx.lineTo(x, plot.bottom);
+            ctx.stroke();
+
+            // Горизонтальная сетка
+            ctx.beginPath();
+            ctx.moveTo(plot.left, y);
+            ctx.lineTo(plot.right, y);
+            ctx.stroke();
+
+            const wheatTick = getMaxWheat() * i / divisions;
+            const computerTick = getMaxComputers() * i / divisions;
+
+            ctx.fillText(
+                wheatTick.toFixed(0),
+                x,
+                plot.bottom + 19
+            );
+
+            ctx.textAlign = "right";
+
+            ctx.fillText(
+                computerTick.toFixed(0),
+                plot.left - 10,
+                y
+            );
+
+            ctx.textAlign = "center";
+        }
+    }
+
+    function drawAxes(plot) {
+        ctx.strokeStyle = "#475569";
+        ctx.lineWidth = 1.8;
+
+        ctx.beginPath();
+        ctx.moveTo(plot.left, plot.top);
+        ctx.lineTo(plot.left, plot.bottom);
+        ctx.lineTo(plot.right, plot.bottom);
+        ctx.stroke();// Подпись горизонтальной оси
+        ctx.fillStyle = "#172033";
+        ctx.font = "bold 13px Arial";
+        ctx.textAlign = "center";
+
+        ctx.fillText(
+            "Пшеница (тонны)",
+            (plot.left + plot.right) / 2,
+            height - 14
+        );
+
+        // Подпись вертикальной оси
+        ctx.save();
+
+        ctx.translate(17, (plot.top + plot.bottom) / 2);
+        ctx.rotate(-Math.PI / 2);
+
+        ctx.fillText("Компьютеры (шт.)", 0, 0);
+
+        ctx.restore();
+    }
+
+    function drawFrontier(plot) {
+        // Заштрихованная область достижимого производства
+        ctx.beginPath();
+        ctx.moveTo(toCanvasX(0), toCanvasY(0));
+
+        ctx.lineTo(toCanvasX(0), toCanvasY(getMaxComputers()));
+
+        for (let i = 0; i <= 150; i++) {
+            const wheat = getMaxWheat() * i / 150;
+
+            ctx.lineTo(
+                toCanvasX(wheat),
+                toCanvasY(frontier(wheat))
+            );
+        }
+
+        ctx.lineTo(toCanvasX(getMaxWheat()), toCanvasY(0));
+        ctx.closePath();
+
+        ctx.fillStyle = "rgba(37, 99, 235, 0.08)";
+        ctx.fill();
+
+        // Линия КПВ
+        ctx.beginPath();
+
+        for (let i = 0; i <= 150; i++) {
+            const wheat = getMaxWheat() * i / 150;
+
+            const x = toCanvasX(wheat);
+            const y = toCanvasY(frontier(wheat));
+
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        }
+
+        ctx.strokeStyle = "#2563eb";
+        ctx.lineWidth = 3;
+        ctx.lineJoin = "round";
+        ctx.stroke();
+
+        // Подпись кривой
+        ctx.fillStyle = "#2563eb";
+        ctx.font = "bold 12px Arial";
+        ctx.textAlign = "right";
+
+        ctx.fillText(
+            "КПВ",
+            plot.right - 7,
+            plot.top + 20
+        );
+    }
+
+    function drawPoint() {
+        const wheat = getWheat();
+        const computers = getComputers();
+
+        const x = toCanvasX(wheat);
+        const y = toCanvasY(computers);
+
+        const possibleComputers = frontier(wheat);
+        const epsilon = getMaxComputers() * 0.005;
+
+        let color;
+
+        if (computers > possibleComputers + epsilon) {
+            color = "#dc2626";
+        } else if (Math.abs(computers - possibleComputers) <= epsilon) {
+            color = "#16a34a";
+        } else {
+            color = "#f59e0b";
+        }
+
+        // Пунктир от точки к осям
+        ctx.save();
+
+        ctx.setLineDash([5, 5]);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x, toCanvasY(0));
+        ctx.moveTo(x, y);
+        ctx.lineTo(toCanvasX(0), y);
+        ctx.stroke();
+
+        ctx.restore();
+
+        // Точка производства
+        ctx.beginPath();
+        ctx.arc(x, y, 8, 0, Math.PI * 2);
+
+        ctx.fillStyle = color;
+        ctx.fill();
+
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "#ffffff";
+        ctx.stroke();
+
+        // Обводка для удобного перетаскивания
+        ctx.beginPath();
+        ctx.arc(x, y, 14, 0, Math.PI * 2);
+        ctx.strokeStyle = color;
+        ctx.globalAlpha = 0.25;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.globalAlpha = 1;
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, width, height);
+
+        const plot = getPlot();
+
+        drawGrid(plot);
+        drawAxes(plot);
+        drawFrontier(plot);
+        drawPoint();
+    }
+
+    function updateStatus() {
+        const wheat = getWheat();
+        const computers = getComputers();
+
+        const maximum = frontier(wheat);
+        const epsilon = getMaxComputers() * 0.005;
+
+        maxWheatValue.textContent = getMaxWheat() + " т";
+        maxComputersValue.textContent = getMaxComputers() + " шт.";
+
+        wheatValue.textContent = wheat + " т";
+        computersValue.textContent = computers + " шт.";
+
+        statWheat.textContent = wheat + " т";
+        statComputers.textContent = computers + " шт.";
+
+        statusBox.className = "status";if (computers > maximum + epsilon) {
+            statusBox.classList.add("unattainable");
+
+            statusTitle.textContent = "Недостижимое производство";
+
+            statusText.textContent =
+                "При выпуске " + wheat + " т пшеницы экономика может " +
+                "произвести не более " + maximum.toFixed(1) +
+                " компьютера/компьютеров по выбранной модели. " +
+                "Для такой комбинации недостаточно ресурсов.";
+        } else if (Math.abs(computers - maximum) <= epsilon) {
+            statusBox.classList.add("efficient");
+
+            statusTitle.textContent = "Производственная эффективность";
+
+            statusText.textContent =
+                "Точка находится приблизительно на кривой КПВ. " +
+                "Ресурсы используются эффективно в рамках этой модели.";
+        } else {
+            statusBox.classList.add("inefficient");
+
+            statusTitle.textContent = "Неэффективное производство";
+
+            statusText.textContent =
+                "Точка находится внутри кривой КПВ. При тех же " +
+                "ресурсах можно увеличить выпуск одного или обоих товаров, " +
+                "не сокращая производство другого.";
+        }
+
+        draw();
+    }
+
+    function updatePointLimits() {
+        wheatInput.max = getMaxWheat();
+        computersInput.max = getMaxComputers();
+
+        // Не допускаем значений выше новых максимумов
+        wheatInput.value = Math.min(
+            getWheat(),
+            getMaxWheat()
+        );
+
+        computersInput.value = Math.min(
+            getComputers(),
+            getMaxComputers()
+        );
+
+        updateStatus();
+    }
+
+    maxWheatInput.addEventListener("input", updatePointLimits);
+    maxComputersInput.addEventListener("input", updatePointLimits);
+
+    wheatInput.addEventListener("input", updateStatus);
+    computersInput.addEventListener("input", updateStatus);
+
+    document.getElementById("resetButton").addEventListener("click", () => {
+        maxWheatInput.value = 100;
+        maxComputersInput.value = 50;
+        wheatInput.value = 50;
+        computersInput.value = 25;
+
+        updatePointLimits();
+    });
+
+    document.getElementById("efficientButton").addEventListener("click", () => {
+        const wheat = getWheat();
+
+        computersInput.value = Math.round(frontier(wheat));
+
+        updateStatus();
+    });
+
+    document.getElementById("insideButton").addEventListener("click", () => {
+        const wheat = getWheat();
+
+        computersInput.value = Math.round(frontier(wheat) * 0.5);
+
+        updateStatus();
+    });
+
+    function pointerPosition(event) {
+        const rect = canvas.getBoundingClientRect();
+
+        return {
+            x: (event.clientX - rect.left) * width / rect.width,
+            y: (event.clientY - rect.top) * height / rect.height
+        };
+    }
+
+    function nearPoint(position) {
+        const x = toCanvasX(getWheat());
+        const y = toCanvasY(getComputers());
+
+        return Math.hypot(position.x - x, position.y - y) < 28;
+    }
+
+    canvas.addEventListener("pointerdown", event => {
+        const position = pointerPosition(event);
+
+        if (nearPoint(position)) {
+            dragging = true;
+            canvas.setPointerCapture(event.pointerId);
+        }
+    });
+
+    canvas.addEventListener("pointermove", event => {
+        if (!dragging) return;
+
+        const position = pointerPosition(event);
+
+        wheatInput.value = Math.round(toDataX(position.x));
+        computersInput.value = Math.round(toDataY(position.y));
+
+        updateStatus();
+    });
+
+    canvas.addEventListener("pointerup", () => {
+        dragging = false;
+    });
+
+    canvas.addEventListener("pointercancel", () => {
+        dragging = false;
+    });
+
+    window.addEventListener("resize", resizeCanvas);
+
+    updateStatus();
+    resizeCanvas();
+</script>
+</body>
+</html>if (computers > maximum + epsilon) {
+            statusBox.classList.add("unattainable");
+
+            statusTitle.textContent = "Недостижимое производство";
+
+            statusText.textContent =
+                "При выпуске " + wheat + " т пшеницы экономика может " +
+                "произвести не более " + maximum.toFixed(1) +
+                " компьютера/компьютеров по выбранной модели. " +
+                "Для такой комбинации недостаточно ресурсов.";
+        } else if (Math.abs(computers - maximum) <= epsilon) {
+            statusBox.classList.add("efficient");
+
+            statusTitle.textContent = "Производственная эффективность";
+
+            statusText.textContent =
+                "Точка находится приблизительно на кривой КПВ. " +
+                "Ресурсы используются эффективно в рамках этой модели.";
+        } else {
+            statusBox.classList.add("inefficient");
+
+            statusTitle.textContent = "Неэффективное производство";
+
+            statusText.textContent =
+                "Точка находится внутри кривой КПВ. При тех же " +
+                "ресурсах можно увеличить выпуск одного или обоих товаров, " +
+                "не сокращая производство другого.";
+        }
+
+        draw();
+    }
+
+    function updatePointLimits() {
+        wheatInput.max = getMaxWheat();
+        computersInput.max = getMaxComputers();
+
+        // Не допускаем значений выше новых максимумов
+        wheatInput.value = Math.min(
+            getWheat(),
+            getMaxWheat()
+        );
+
+        computersInput.value = Math.min(
+            getComputers(),
+            getMaxComputers()
+        );
+
+        updateStatus();
+    }
+
+    maxWheatInput.addEventListener("input", updatePointLimits);
+    maxComputersInput.addEventListener("input", updatePointLimits);
+
+    wheatInput.addEventListener("input", updateStatus);
+    computersInput.addEventListener("input", updateStatus);
+
+    document.getElementById("resetButton").addEventListener("click", () => {
+        maxWheatInput.value = 100;
+        maxComputersInput.value = 50;
+        wheatInput.value = 50;
+        computersInput.value = 25;
+
+        updatePointLimits();
+    });
+
+    document.getElementById("efficientButton").addEventListener("click", () => {
+        const wheat = getWheat();
+
+        computersInput.value = Math.round(frontier(wheat));
+
+        updateStatus();
+    });
+
+    document.getElementById("insideButton").addEventListener("click", () => {
+        const wheat = getWheat();
+
+        computersInput.value = Math.round(frontier(wheat) * 0.5);
+
+        updateStatus();
+    });
+
+    function pointerPosition(event) {
+        const rect = canvas.getBoundingClientRect();
+
+        return {
+            x: (event.clientX - rect.left) * width / rect.width,
+            y: (event.clientY - rect.top) * height / rect.height
+        };
+    }
+
+    function nearPoint(position) {
+        const x = toCanvasX(getWheat());
+        const y = toCanvasY(getComputers());
+
+        return Math.hypot(position.x - x, position.y - y) < 28;
+    }
+
+    canvas.addEventListener("pointerdown", event => {
+        const position = pointerPosition(event);
+
+        if (nearPoint(position)) {
+            dragging = true;
+            canvas.setPointerCapture(event.pointerId);
+        }
+    });
+
+    canvas.addEventListener("pointermove", event => {
+        if (!dragging) return;
+
+        const position = pointerPosition(event);
+
+        wheatInput.value = Math.round(toDataX(position.x));
+        computersInput.value = Math.round(toDataY(position.y));
+
+        updateStatus();
+    });
+
+    canvas.addEventListener("pointerup", () => {
+        dragging = false;
+    });
+
+    canvas.addEventListener("pointercancel", () => {
+        dragging = false;
+    });
+
+    window.addEventListener("resize", resizeCanvas);
+
+    updateStatus();
+    resizeCanvas();
+</script>
+</body>
+</html>
